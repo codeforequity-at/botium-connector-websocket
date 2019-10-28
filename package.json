@@ -1,0 +1,56 @@
+{
+  "name": "botium-connector-websocket",
+  "version": "0.0.1",
+  "description": "Botium Connector for Websocket Endpoint",
+  "main": "dist/botium-connector-websocket-cjs.js",
+  "module": "dist/botium-connector-websocket-es.js",
+  "engines": {
+    "node": ">=8.3"
+  },
+  "scripts": {
+    "echoserver": "node samples/echoserver/index.js",
+    "build": "npm run eslint && rollup -c",
+    "eslint": "eslint index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codeforequity-at/botium-connector-websocket.git"
+  },
+  "author": "Florian Treml",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/codeforequity-at/botium-core/issues"
+  },
+  "homepage": "https://github.com/codeforequity-at/botium-core",
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/node": "^7.5.5",
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "eslint": "^6.3.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "rollup": "^1.20.3",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.5.5",
+    "debug": "^4.1.1",
+    "esprima": "^4.0.1",
+    "jsonpath": "^1.0.2",
+    "lodash": "^4.17.15",
+    "mime-types": "^2.1.24",
+    "mustache": "^3.1.0",
+    "uuid": "^3.3.3",
+    "ws": "^7.2.0"
+  },
+  "peerDependencies": {
+    "botium-core": ">= 1.6.1"
+  }
+}
