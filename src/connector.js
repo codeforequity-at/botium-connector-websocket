@@ -4,10 +4,7 @@ const _ = require('lodash')
 const Mustache = require('mustache')
 const jp = require('jsonpath')
 const mime = require('mime-types')
-const path = require('path')
-const fs = require('fs')
-const vm = require('vm')
-const esprima = require('esprima')
+const { getHook, executeHook } = require('botium-core/src/helpers/HookUtils')
 const debug = require('debug')('botium-connector-websocket')
 
 const Capabilities = {
@@ -37,8 +34,8 @@ class BotiumConnectorWebsocket {
     if (!this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE] && !this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK]) throw new Error('WEBSOCKET_REQUEST_BODY_TEMPLATE or WEBSOCKET_REQUEST_HOOK capability required')
     if (!this.caps[Capabilities.WEBSOCKET_RESPONSE_TEXTS_JSONPATH] && !this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK]) throw new Error('WEBSOCKET_RESPONSE_TEXTS_JSONPATH or WEBSOCKET_RESPONSE_HOOK capability required')
 
-    this.requestHook = this._getHook(this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK])
-    this.responseHook = this._getHook(this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])
+    this.requestHook = getHook(this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK])
+    this.responseHook = getHook(this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])
   }
 
   async Start () {
@@ -92,7 +89,7 @@ class BotiumConnectorWebsocket {
         throw new Error(`composing body from WEBSOCKET_REQUEST_BODY_TEMPLATE failed (${util.inspect(err)})`)
       }
     }
-    await this._executeHookWeak(this.requestHook, Object.assign({ requestOptions }, view))
+    await executeHook(this.requestHook, Object.assign({ requestOptions }, view))
     this.ws.send(JSON.stringify(requestOptions.body))
   }
 
@@ -146,14 +143,14 @@ class BotiumConnectorWebsocket {
 
         hasMessageText = true
         const botMsg = { sourceData: body, messageText, media, buttons }
-        await this._executeHookWeak(this.responseHook, { botMsg })
+        await executeHook(this.responseHook, { botMsg })
         botMsgs.push(botMsg)
       }
     }
 
     if (!hasMessageText) {
       const botMsg = { messageText: '', sourceData: body, media, buttons }
-      await this._executeHookWeak(this.responseHook, { botMsg })
+      await executeHook(this.responseHook, { botMsg })
       botMsgs.push(botMsg)
     }
 
@@ -171,69 +168,6 @@ class BotiumConnectorWebsocket {
     } else {
       return Mustache.render(template, view)
     }
-  }
-
-  async _executeHookWeak (hook, args) {
-    if (!hook) {
-      return
-    }
-    if (_.isFunction(hook)) {
-      await hook(args)
-      return
-    }
-    if (_.isString(hook)) {
-      // we let to alter args this way
-      vm.createContext(args)
-      vm.runInContext(hook, args)
-      return
-    }
-
-    throw new Error(`Unknown hook ${typeof hook}`)
-  }
-
-  _getHook (data) {
-    if (!data) {
-      return null
-    }
-
-    if (_.isFunction(data)) {
-      debug('found hook, type: function definition')
-      return data
-    }
-
-    let resultWithRequire
-    let tryLoadFile = path.resolve(process.cwd(), data)
-    if (fs.existsSync(tryLoadFile)) {
-      resultWithRequire = require(tryLoadFile)
-    }
-
-    tryLoadFile = data
-    try {
-      resultWithRequire = require(data)
-    } catch (err) {
-    }
-
-    if (resultWithRequire) {
-      if (_.isFunction(resultWithRequire)) {
-        debug('found hook, type: require')
-        return resultWithRequire
-      } else {
-        throw new Error(`Cant load hook ${tryLoadFile} because it is not a function`)
-      }
-    }
-
-    if (_.isString(data)) {
-      try {
-        esprima.parseScript(data)
-      } catch (err) {
-        throw new Error(`Cant load hook, syntax is not valid - ${util.inspect(err)}`)
-      }
-
-      debug('Found hook, type: JavaScript as String')
-      return data
-    }
-
-    throw new Error(`Not valid hook ${util.inspect(data)}`)
   }
 }
 
