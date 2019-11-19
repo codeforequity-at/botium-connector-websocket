@@ -76,6 +76,10 @@ To check the configuration, run the emulator (Botium CLI required) to bring up a
 
 Botium setup is ready, you can begin to write your test cases with [BotiumScript](https://botium.atlassian.net/wiki/spaces/BOTIUM/pages/491664/Botium+Scripting+-+BotiumScript).
 
+## Using a Proxy
+
+The connector checks for the HTTPS_PROXY and HTTP_PROXY environment variables.
+
 ## How to start sample
 
 There is a simple *Echo*-bot included, see [samples/echoserver](./samples/echoserver) folder. You have to start it before running the samples:

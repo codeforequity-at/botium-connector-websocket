@@ -43,6 +43,7 @@
     "@babel/runtime": "^7.5.5",
     "debug": "^4.1.1",
     "esprima": "^4.0.1",
+    "https-proxy-agent": "^3.0.1",
     "jsonpath": "^1.0.2",
     "lodash": "^4.17.15",
     "mime-types": "^2.1.24",

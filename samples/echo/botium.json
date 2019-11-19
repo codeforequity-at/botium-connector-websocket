@@ -3,7 +3,7 @@
     "Capabilities": {
       "PROJECTNAME": "Botium Project Websocket",
       "CONTAINERMODE": "websocket",
-      "WEBSOCKET_URL": "ws://127.0.0.1:2345",
+      "WEBSOCKET_URL": "wss://box.botium.at/websocket/",
       "WEBSOCKET_REQUEST_BODY_TEMPLATE": {
         "conversationId": "botium",
         "text": "{{msg.messageText}}"
