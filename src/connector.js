@@ -1,9 +1,11 @@
 const util = require('util')
+const url = require('url')
 const WebSocket = require('ws')
 const _ = require('lodash')
 const Mustache = require('mustache')
 const jp = require('jsonpath')
 const mime = require('mime-types')
+const HttpsProxyAgent = require('https-proxy-agent')
 const { getHook, executeHook } = require('botium-core/src/helpers/HookUtils')
 const debug = require('debug')('botium-connector-websocket')
 
@@ -42,7 +44,34 @@ class BotiumConnectorWebsocket {
     debug('Start called')
 
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL])
+      const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy
+      const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy
+      const proxy = httpsProxy || httpProxy
+
+      if (proxy) {
+        debug(`Using proxy ${proxy}`)
+        const proxyOptions = {}
+        if (proxy.startsWith('https') || proxy.startsWith('http')) {
+          const proxyUrl = new url.URL(proxy)
+          proxyOptions.host = proxyUrl.hostname
+          proxyOptions.port = proxyUrl.port
+          proxyOptions.protocol = proxyUrl.protocol
+        } else {
+          if (httpsProxy) proxyOptions.protocol = 'https:'
+          else proxyOptions.protocol = 'http:'
+          if (proxy.indexOf(':') > 0) {
+            proxyOptions.host = httpsProxy.split(':')[0]
+            proxyOptions.port = httpsProxy.split(':')[1]
+          } else {
+            proxyOptions.host = proxy
+          }
+        }
+        console.log(proxyOptions)
+        const proxyAgent = new HttpsProxyAgent(proxyOptions)
+        this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL], { agent: proxyAgent })
+      } else {
+        this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL])
+      }
       this.wsOpened = false
       this.ws.on('open', () => {
         this.wsOpened = true
