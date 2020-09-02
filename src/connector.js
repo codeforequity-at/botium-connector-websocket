@@ -9,6 +9,8 @@ const HttpsProxyAgent = require('https-proxy-agent')
 const { getHook, executeHook } = require('botium-core/src/helpers/HookUtils')
 const debug = require('debug')('botium-connector-websocket')
 
+const { BotiumError, Capabilities: CoreCapabilities } = require('botium-core')
+
 const Capabilities = {
   WEBSOCKET_URL: 'WEBSOCKET_URL',
   WEBSOCKET_REQUEST_BODY_TEMPLATE: 'WEBSOCKET_REQUEST_BODY_TEMPLATE',
@@ -26,6 +28,25 @@ class BotiumConnectorWebsocket {
   constructor ({ queueBotSays, caps }) {
     this.queueBotSays = queueBotSays
     this.caps = caps
+
+    if (
+      !this.caps[CoreCapabilities.SECURITY_ALLOW_UNSAFE] &&
+      (this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK] || this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])
+    ) {
+      throw new BotiumError(
+        'Security Error. Using hooks in Websocket Connector is not allowed',
+        {
+          type: 'security',
+          subtype: 'allow unsafe',
+          source: 'botium-connector-websocket',
+          cause: {
+            requestHook: this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK],
+            responseHook: this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK]
+          }
+        }
+      )
+    }
+
   }
 
   Validate () {
