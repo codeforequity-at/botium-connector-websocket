@@ -9,8 +9,6 @@ const HttpsProxyAgent = require('https-proxy-agent')
 const { getHook, executeHook } = require('botium-core/src/helpers/HookUtils')
 const debug = require('debug')('botium-connector-websocket')
 
-const { BotiumError, Capabilities: CoreCapabilities } = require('botium-core')
-
 const Capabilities = {
   WEBSOCKET_URL: 'WEBSOCKET_URL',
   WEBSOCKET_REQUEST_BODY_TEMPLATE: 'WEBSOCKET_REQUEST_BODY_TEMPLATE',
@@ -28,25 +26,6 @@ class BotiumConnectorWebsocket {
   constructor ({ queueBotSays, caps }) {
     this.queueBotSays = queueBotSays
     this.caps = caps
-
-    if (
-      !this.caps[CoreCapabilities.SECURITY_ALLOW_UNSAFE] &&
-      (this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK] || this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])
-    ) {
-      throw new BotiumError(
-        'Security Error. Using hooks in Websocket Connector is not allowed',
-        {
-          type: 'security',
-          subtype: 'allow unsafe',
-          source: 'botium-connector-websocket',
-          cause: {
-            requestHook: this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK],
-            responseHook: this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK]
-          }
-        }
-      )
-    }
-
   }
 
   Validate () {
@@ -57,8 +36,8 @@ class BotiumConnectorWebsocket {
     if (!this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE] && !this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK]) throw new Error('WEBSOCKET_REQUEST_BODY_TEMPLATE or WEBSOCKET_REQUEST_HOOK capability required')
     if (!this.caps[Capabilities.WEBSOCKET_RESPONSE_TEXTS_JSONPATH] && !this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK]) throw new Error('WEBSOCKET_RESPONSE_TEXTS_JSONPATH or WEBSOCKET_RESPONSE_HOOK capability required')
 
-    this.requestHook = getHook(this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK])
-    this.responseHook = getHook(this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])
+    this.requestHook = getHook(this.caps, this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK])
+    this.responseHook = getHook(this.caps, this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])
   }
 
   async Start () {
@@ -139,7 +118,7 @@ class BotiumConnectorWebsocket {
         throw new Error(`composing body from WEBSOCKET_REQUEST_BODY_TEMPLATE failed (${util.inspect(err)})`)
       }
     }
-    await executeHook(this.requestHook, Object.assign({ requestOptions }, view))
+    await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, view))
     this.ws.send(JSON.stringify(requestOptions.body))
   }
 
@@ -193,14 +172,14 @@ class BotiumConnectorWebsocket {
 
         hasMessageText = true
         const botMsg = { sourceData: body, messageText, media, buttons }
-        await executeHook(this.responseHook, { botMsg })
+        await executeHook(this.caps, this.responseHook, { botMsg })
         botMsgs.push(botMsg)
       }
     }
 
     if (!hasMessageText) {
       const botMsg = { messageText: '', sourceData: body, media, buttons }
-      await executeHook(this.responseHook, { botMsg })
+      await executeHook(this.caps, this.responseHook, { botMsg })
       botMsgs.push(botMsg)
     }
 
