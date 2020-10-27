@@ -66,7 +66,6 @@ class BotiumConnectorWebsocket {
             proxyOptions.host = proxy
           }
         }
-        console.log(proxyOptions)
         const proxyAgent = new HttpsProxyAgent(proxyOptions)
         this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL], { agent: proxyAgent })
       } else {
