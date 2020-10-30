@@ -11,6 +11,7 @@ const debug = require('debug')('botium-connector-websocket')
 
 const Capabilities = {
   WEBSOCKET_URL: 'WEBSOCKET_URL',
+  WEBSOCKET_HANDSHAKE_TIMEOUT: 'WEBSOCKET_HANDSHAKE_TIMEOUT',
   WEBSOCKET_REQUEST_BODY_TEMPLATE: 'WEBSOCKET_REQUEST_BODY_TEMPLATE',
   WEBSOCKET_REQUEST_HOOK: 'WEBSOCKET_REQUEST_HOOK',
   WEBSOCKET_RESPONSE_HOOK: 'WEBSOCKET_RESPONSE_HOOK',
@@ -21,6 +22,7 @@ const Capabilities = {
 }
 
 const Defaults = {
+  [Capabilities.WEBSOCKET_HANDSHAKE_TIMEOUT]: 10000,
   [Capabilities.WEBSOCKET_RESPONSE_IGNORE_EMPTY]: true
 }
 
@@ -45,6 +47,10 @@ class BotiumConnectorWebsocket {
   async Start () {
     debug('Start called')
 
+    const wsOptions = {
+      handshakeTimeout: this.caps[Capabilities.WEBSOCKET_HANDSHAKE_TIMEOUT]
+    }
+
     return new Promise((resolve, reject) => {
       const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy
       const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy
@@ -68,11 +74,10 @@ class BotiumConnectorWebsocket {
             proxyOptions.host = proxy
           }
         }
-        const proxyAgent = new HttpsProxyAgent(proxyOptions)
-        this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL], { agent: proxyAgent })
-      } else {
-        this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL])
+        wsOptions.agent = new HttpsProxyAgent(proxyOptions)
       }
+      this.ws = new WebSocket(this.caps[Capabilities.WEBSOCKET_URL], wsOptions)
+
       this.wsOpened = false
       this.ws.on('open', () => {
         this.wsOpened = true
