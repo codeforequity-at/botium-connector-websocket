@@ -102,6 +102,11 @@ Set the capability __CONTAINERMODE__ to __websocket__ to activate this connector
 ### WEBSOCKET_URL
 Websocket endpoint URL, starting with _ws://_ or _wss://_
 
+### WEBSOCKET_HANDSHAKE_TIMEOUT
+_Default: 10000 (10 sec)_
+
+Opening handshake timeout
+
 ### WEBSOCKET_REQUEST_BODY_TEMPLATE
 [Mustache template](https://mustache.github.io/) for conversating the Botium internal message structure to the Websocket payload as required for your communication protocol.
 
@@ -127,6 +132,9 @@ The Mustache view contains the Botium internal message structure in the _msg_ fi
 tbd
 
 ### WEBSOCKET_RESPONSE_HOOK
+tbd
+
+### WEBSOCKET_RESPONSE_IGNORE_EMPTY
 tbd
 
 ## Current Restrictions
