@@ -16,10 +16,12 @@ const Capabilities = {
   WEBSOCKET_RESPONSE_HOOK: 'WEBSOCKET_RESPONSE_HOOK',
   WEBSOCKET_RESPONSE_TEXTS_JSONPATH: 'WEBSOCKET_RESPONSE_TEXTS_JSONPATH',
   WEBSOCKET_RESPONSE_BUTTONS_JSONPATH: 'WEBSOCKET_RESPONSE_BUTTONS_JSONPATH',
-  WEBSOCKET_RESPONSE_MEDIA_JSONPATH: 'WEBSOCKET_RESPONSE_MEDIA_JSONPATH'
+  WEBSOCKET_RESPONSE_MEDIA_JSONPATH: 'WEBSOCKET_RESPONSE_MEDIA_JSONPATH',
+  WEBSOCKET_RESPONSE_IGNORE_EMPTY: 'WEBSOCKET_RESPONSE_IGNORE_EMPTY'
 }
 
 const Defaults = {
+  [Capabilities.WEBSOCKET_RESPONSE_IGNORE_EMPTY]: true
 }
 
 class BotiumConnectorWebsocket {
@@ -175,11 +177,12 @@ class BotiumConnectorWebsocket {
         botMsgs.push(botMsg)
       }
     }
-
     if (!hasMessageText) {
-      const botMsg = { messageText: '', sourceData: body, media, buttons }
-      await executeHook(this.caps, this.responseHook, { botMsg })
-      botMsgs.push(botMsg)
+      if (media.length > 0 || buttons.length > 0 || !this.caps[Capabilities.SIMPLEREST_IGNORE_EMPTY]) {
+        const botMsg = { messageText: '', sourceData: body, media, buttons }
+        await executeHook(this.caps, this.responseHook, { botMsg })
+        botMsgs.push(botMsg)
+      }
     }
 
     botMsgs.forEach(botMsg => setTimeout(() => this.queueBotSays(botMsg), 0))
