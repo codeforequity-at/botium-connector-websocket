@@ -178,7 +178,7 @@ class BotiumConnectorWebsocket {
       }
     }
     if (!hasMessageText) {
-      if (media.length > 0 || buttons.length > 0 || !this.caps[Capabilities.SIMPLEREST_IGNORE_EMPTY]) {
+      if (media.length > 0 || buttons.length > 0 || !this.caps[Capabilities.WEBSOCKET_RESPONSE_IGNORE_EMPTY]) {
         const botMsg = { messageText: '', sourceData: body, media, buttons }
         await executeHook(this.caps, this.responseHook, { botMsg })
         botMsgs.push(botMsg)
