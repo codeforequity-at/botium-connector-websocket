@@ -11,14 +11,23 @@ wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     console.log('received: %s', message)
     const content = JSON.parse(message)
-    ws.send(JSON.stringify({
-      conversationId: content.conversationId,
-      text: 'Got your question.'
-    }))
-    ws.send(JSON.stringify({
-      conversationId: content.conversationId,
-      text: 'You said: ' + content.text
-    }))
+    if (content.text === 'empty') {
+      ws.send(JSON.stringify({
+        conversationId: content.conversationId,
+        text: '',
+        intent: 'EMPTY_INTENT'
+      }))
+    } else {
+      ws.send(JSON.stringify({
+        conversationId: content.conversationId,
+        text: 'Got your question.',
+      }))
+      ws.send(JSON.stringify({
+        conversationId: content.conversationId,
+        text: 'You said: ' + content.text,
+        intent: 'SOME_INTENT'
+      }))
+    }
   })
 })
 

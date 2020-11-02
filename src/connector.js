@@ -174,7 +174,7 @@ class BotiumConnectorWebsocket {
 
       const messageTexts = (_.isArray(responseTexts) ? _.flattenDeep(responseTexts) : [responseTexts])
       for (const messageText of messageTexts) {
-        if (!messageText) return
+        if (!messageText) continue
 
         hasMessageText = true
         const botMsg = { sourceData: body, messageText, media, buttons }
@@ -183,9 +183,11 @@ class BotiumConnectorWebsocket {
       }
     }
     if (!hasMessageText) {
-      if (media.length > 0 || buttons.length > 0 || !this.caps[Capabilities.WEBSOCKET_RESPONSE_IGNORE_EMPTY]) {
-        const botMsg = { messageText: '', sourceData: body, media, buttons }
-        await executeHook(this.caps, this.responseHook, { botMsg })
+      const botMsg = { messageText: '', sourceData: body, media, buttons }
+      const beforeHookKeys = Object.keys(botMsg)
+      await executeHook(this.caps, this.responseHook, { botMsg })
+      const afterHookKeys = Object.keys(botMsg)
+      if (beforeHookKeys.length !== afterHookKeys.length || media.length > 0 || buttons.length > 0 || !this.caps[Capabilities.SIMPLEREST_IGNORE_EMPTY]) {
         botMsgs.push(botMsg)
       }
     }

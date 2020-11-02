@@ -1,0 +1,17 @@
+nlp
+
+#bot
+
+#me
+hi
+
+#bot
+
+#bot
+INTENT SOME_INTENT
+
+#me
+empty
+
+#bot
+INTENT EMPTY_INTENT
