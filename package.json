@@ -1,6 +1,6 @@
 {
   "name": "botium-connector-websocket",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Botium Connector for Websocket Endpoint",
   "main": "dist/botium-connector-websocket-cjs.js",
   "module": "dist/botium-connector-websocket-es.js",
