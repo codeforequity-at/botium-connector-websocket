@@ -16,7 +16,7 @@ Botium connects to your Websocket endpoint by transforming the Botium internal m
 It can be used as any other Botium connector with all Botium Stack components:
 * [Botium CLI](https://github.com/codeforequity-at/botium-cli/)
 * [Botium Bindings](https://github.com/codeforequity-at/botium-bindings/)
-* [Botium Box](https://www.botium.at)
+* [Botium Box](https://www.botium.ai)
 
 ## Requirements
 * **Node.js and NPM**
@@ -74,7 +74,7 @@ To check the configuration, run the emulator (Botium CLI required) to bring up a
 > botium-cli emulator
 ```
 
-Botium setup is ready, you can begin to write your test cases with [BotiumScript](https://botium.atlassian.net/wiki/spaces/BOTIUM/pages/491664/Botium+Scripting+-+BotiumScript).
+Botium setup is ready.
 
 ## Using a Proxy
 
