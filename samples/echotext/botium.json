@@ -1,0 +1,10 @@
+{
+  "botium": {
+    "Capabilities": {
+      "PROJECTNAME": "Botium Project Websocket",
+      "CONTAINERMODE": "websocket",
+      "__WEBSOCKET_URL": "wss://demo.botiumbox.com/websockettext/",
+      "WEBSOCKET_URL": "ws://127.0.0.1:2346"
+    }
+  }
+}
