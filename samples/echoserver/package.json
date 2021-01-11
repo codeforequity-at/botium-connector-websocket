@@ -5,7 +5,7 @@
     "start": "node index.js",
     "docker:build": "docker build -t botium/websocket-sample .",
     "docker:push": "docker push botium/websocket-sample",
-    "docker:run": "docker run --restart always -p 4053:2345 -d botium/websocket-sample"
+    "docker:run": "docker run --restart always -p 4053:2345 -p 4054:2346 -d botium/websocket-sample"
   },
   "dependencies": {
     "ws": "^7.2.0"
