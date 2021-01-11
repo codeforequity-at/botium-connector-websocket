@@ -48,7 +48,7 @@ class BotiumConnectorWebsocket {
     if (!this.caps[Capabilities.WEBSOCKET_URL]) throw new Error('WEBSOCKET_URL capability required')
     if (!this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_RAW] && !this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE] && !this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK]) throw new Error('WEBSOCKET_REQUEST_BODY_RAW or WEBSOCKET_REQUEST_BODY_TEMPLATE or WEBSOCKET_REQUEST_HOOK capability required')
     if (!this.caps[Capabilities.WEBSOCKET_RESPONSE_RAW] && !this.caps[Capabilities.WEBSOCKET_RESPONSE_TEXTS_JSONPATH] && !this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK]) throw new Error('WEBSOCKET_RESPONSE_RAW or WEBSOCKET_RESPONSE_TEXTS_JSONPATH or WEBSOCKET_RESPONSE_HOOK capability required')
-    if (this.caps[Capabilities.WEBSOCKET_RESPONSE_RAW] && (this.caps[Capabilities.WEBSOCKET_RESPONSE_TEXTS_JSONPATH] || this.caps[Capabilities.WEBSOCKET_RESPONSE_BUTTONS_JSONPATH] || this.caps[Capabilities.WEBSOCKET_RESPONSE_MEDIA_JSONPATH])) throw new Error('No JSON-Path parsing available when WEBSOCKET_RESPONSE_RAW is set')
+    if (this.caps[Capabilities.WEBSOCKET_RESPONSE_RAW] && (this.caps[Capabilities.WEBSOCKET_RESPONSE_TEXTS_JSONPATH] || this.caps[Capabilities.WEBSOCKET_RESPONSE_BUTTONS_JSONPATH] || this.caps[Capabilities.WEBSOCKET_RESPONSE_MEDIA_JSONPATH])) throw new Error('No JSONPath parsing available when WEBSOCKET_RESPONSE_RAW is set')
 
     this.requestHook = getHook(this.caps, this.caps[Capabilities.WEBSOCKET_REQUEST_HOOK])
     this.responseHook = getHook(this.caps, this.caps[Capabilities.WEBSOCKET_RESPONSE_HOOK])

@@ -10,7 +10,7 @@
   "scripts": {
     "echoserver": "node samples/echoserver/index.js",
     "build": "npm run eslint && rollup -c",
-    "eslint": "eslint index.js"
+    "eslint": "eslint index.js src/**/*.js"
   },
   "repository": {
     "type": "git",

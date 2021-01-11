@@ -107,6 +107,11 @@ _Default: 10000 (10 sec)_
 
 Opening handshake timeout
 
+### WEBSOCKET_REQUEST_BODY_RAW
+If set to _true_, the request body is sent as plain string, otherwise JSON formatting is applied.
+
+If not given, this is automatically set to _true_ if the _WEBSOCKET\_REQUEST\_BODY\_TEMPLATE_ capabilitiy is given
+
 ### WEBSOCKET_REQUEST_BODY_TEMPLATE
 [Mustache template](https://mustache.github.io/) for conversating the Botium internal message structure to the Websocket payload as required for your communication protocol.
 
@@ -118,6 +123,11 @@ The Mustache view contains the Botium internal message structure in the _msg_ fi
        "text": "{{msg.messageText}}"
     },
     ...
+
+### WEBSOCKET_RESPONSE_RAW
+If set to _true_, the response body is handles as plain string, otherwise JSON parsing is applied.
+
+If not given, this is automatically set to _true_ if the _WEBSOCKET\_RESPONSE\_TEXTS\_JSONPATH_ capabilitiy is given. The _WEBSOCKET\_RESPONSE\_*_-JSONPath expressions are only possible if this capability is set to _false_.
 
 ### WEBSOCKET_RESPONSE_TEXTS_JSONPATH
 [JSONPath expression](https://github.com/dchester/jsonpath) to extract the message text from the Websocket response.
