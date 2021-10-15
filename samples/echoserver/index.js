@@ -21,7 +21,7 @@ wssJson.on('connection', (ws) => {
     } else {
       ws.send(JSON.stringify({
         conversationId: content.conversationId,
-        text: 'Got your question.',
+        text: 'Got your question.'
       }))
       ws.send(JSON.stringify({
         conversationId: content.conversationId,

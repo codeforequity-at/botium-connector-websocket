@@ -1,5 +1,6 @@
 const util = require('util')
 const url = require('url')
+const { v4: uuidv4 } = require('uuid')
 const WebSocket = require('ws')
 const _ = require('lodash')
 const Mustache = require('mustache')
@@ -11,6 +12,7 @@ const debug = require('debug')('botium-connector-websocket')
 
 const Capabilities = {
   WEBSOCKET_URL: 'WEBSOCKET_URL',
+  WEBSOCKET_HEADERS_TEMPLATE: 'WEBSOCKET_HEADERS_TEMPLATE',
   WEBSOCKET_HANDSHAKE_TIMEOUT: 'WEBSOCKET_HANDSHAKE_TIMEOUT',
   WEBSOCKET_REQUEST_BODY_RAW: 'WEBSOCKET_REQUEST_BODY_RAW',
   WEBSOCKET_REQUEST_BODY_TEMPLATE: 'WEBSOCKET_REQUEST_BODY_TEMPLATE',
@@ -20,7 +22,8 @@ const Capabilities = {
   WEBSOCKET_RESPONSE_TEXTS_JSONPATH: 'WEBSOCKET_RESPONSE_TEXTS_JSONPATH',
   WEBSOCKET_RESPONSE_BUTTONS_JSONPATH: 'WEBSOCKET_RESPONSE_BUTTONS_JSONPATH',
   WEBSOCKET_RESPONSE_MEDIA_JSONPATH: 'WEBSOCKET_RESPONSE_MEDIA_JSONPATH',
-  WEBSOCKET_RESPONSE_IGNORE_EMPTY: 'WEBSOCKET_RESPONSE_IGNORE_EMPTY'
+  WEBSOCKET_RESPONSE_IGNORE_EMPTY: 'WEBSOCKET_RESPONSE_IGNORE_EMPTY',
+  WEBSOCKET_START_BODY_TEMPLATE: 'WEBSOCKET_START_BODY_TEMPLATE'
 }
 
 const Defaults = {
@@ -57,11 +60,26 @@ class BotiumConnectorWebsocket {
   async Start () {
     debug('Start called')
 
-    const wsOptions = {
-      handshakeTimeout: this.caps[Capabilities.WEBSOCKET_HANDSHAKE_TIMEOUT]
+    this.view = {
+      container: this,
+      context: {},
+      msg: {},
+      botium: {
+        conversationId: uuidv4(),
+        stepId: null
+      }
     }
 
     return new Promise((resolve, reject) => {
+      const wsOptions = { }
+
+      if (this.caps[Capabilities.WEBSOCKET_HANDSHAKE_TIMEOUT]) {
+        wsOptions.handshakeTimeout = this.caps[Capabilities.WEBSOCKET_HANDSHAKE_TIMEOUT]
+      }
+      if (this.caps[Capabilities.WEBSOCKET_HEADERS_TEMPLATE]) {
+        wsOptions.headers = this._getMustachedCap(Capabilities.WEBSOCKET_HEADERS_TEMPLATE, this.view, true)
+      }
+
       const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy
       const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy
       const proxy = httpsProxy || httpProxy
@@ -91,8 +109,27 @@ class BotiumConnectorWebsocket {
       this.wsOpened = false
       this.ws.on('open', () => {
         this.wsOpened = true
-        debug(`Websocket connection to ${this.caps[Capabilities.WEBSOCKET_URL]} opened.`)
+        debug(`Websocket connection to ${this.caps[Capabilities.WEBSOCKET_URL]} opened (options: ${JSON.stringify(wsOptions)}).`)
         resolve()
+        if (this.caps[Capabilities.WEBSOCKET_START_BODY_TEMPLATE]) {
+          setTimeout(async () => {
+            const requestOptions = { }
+            const raw = !!this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_RAW]
+            if (raw) {
+              requestOptions.body = this.caps[Capabilities.WEBSOCKET_START_BODY_TEMPLATE]
+            } else {
+              try {
+                requestOptions.body = this._getMustachedCap(Capabilities.WEBSOCKET_START_BODY_TEMPLATE, this.view, !raw)
+              } catch (err) {
+                this.queueBotSays(new Error(`Composing Websocket body from WEBSOCKET_START_BODY_TEMPLATE failed (${err.message})`))
+              }
+            }
+            console.log('start', requestOptions)
+            await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, this.view))
+            if (raw) this.ws.send(requestOptions.body || '')
+            else this.ws.send(JSON.stringify(requestOptions.body || {}))
+          }, 0)
+        }
       })
       this.ws.on('close', () => {
         debug(`Websocket connection to ${this.caps[Capabilities.WEBSOCKET_URL]} closed.`)
@@ -100,10 +137,11 @@ class BotiumConnectorWebsocket {
       this.ws.on('error', (err) => {
         debug(err)
         if (!this.wsOpened) {
-          reject(new Error(`Websocket connection to ${this.caps[Capabilities.WEBSOCKET_URL]} error: ${err.message || err}`))
+          reject(new Error(`Websocket connection to ${this.caps[Capabilities.WEBSOCKET_URL]} (options: ${JSON.stringify(wsOptions)}) error: ${err.message || err}`))
         }
       })
       this.ws.on('message', async (data) => {
+        console.log('message', data)
         if (data || !this.caps[Capabilities.WEBSOCKET_RESPONSE_IGNORE_EMPTY]) {
           const raw = !!this.caps[Capabilities.WEBSOCKET_RESPONSE_RAW]
           if (raw) {
@@ -131,9 +169,8 @@ class BotiumConnectorWebsocket {
   async UserSays (msg) {
     debug('UserSays called')
 
-    const view = {
-      msg
-    }
+    this.view.msg = Object.assign({}, msg)
+    this.view.botium.stepId = uuidv4()
 
     const requestOptions = { }
     const raw = !!this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_RAW]
@@ -141,12 +178,12 @@ class BotiumConnectorWebsocket {
       requestOptions.body = msg.messageText
     } else if (this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE]) {
       try {
-        requestOptions.body = this._getMustachedCap(Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE, view, !raw)
+        requestOptions.body = this._getMustachedCap(Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE, this.view, !raw)
       } catch (err) {
-        throw new Error(`composing body from WEBSOCKET_REQUEST_BODY_TEMPLATE failed (${err.message})`)
+        throw new Error(`Composing Websocket body from WEBSOCKET_REQUEST_BODY_TEMPLATE failed (${err.message})`)
       }
     }
-    await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, view))
+    await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, this.view))
     if (raw) this.ws.send(requestOptions.body || '')
     else this.ws.send(JSON.stringify(requestOptions.body || {}))
   }
@@ -158,9 +195,15 @@ class BotiumConnectorWebsocket {
     }
     this.wsOpened = false
     this.ws = null
+    this.view = {}
   }
 
   async _processBodyAsyncImpl (body, raw) {
+    if (!raw) {
+      Object.assign(this.view.context, body)
+      debug(`current session context: ${util.inspect(this.view.context)}`)
+    }
+
     const botMsgs = []
 
     const media = []

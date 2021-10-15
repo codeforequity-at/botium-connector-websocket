@@ -102,10 +102,16 @@ Set the capability __CONTAINERMODE__ to __websocket__ to activate this connector
 ### WEBSOCKET_URL
 Websocket endpoint URL, starting with _ws://_ or _wss://_
 
+### WEBSOCKET_HEADERS_TEMPLATE
+Websocket HTTP Headers
+
 ### WEBSOCKET_HANDSHAKE_TIMEOUT
 _Default: 10000 (10 sec)_
 
 Opening handshake timeout
+
+### WEBSOCKET_START_BODY_TEMPLATE
+Initial "session setup" message sent from Botium to the Websocket server, right after connecting.
 
 ### WEBSOCKET_REQUEST_BODY_RAW
 If set to _true_, the request body is sent as plain string, otherwise JSON formatting is applied.
@@ -113,7 +119,7 @@ If set to _true_, the request body is sent as plain string, otherwise JSON forma
 If not given, this is automatically set to _true_ if the _WEBSOCKET\_REQUEST\_BODY\_TEMPLATE_ capabilitiy is given
 
 ### WEBSOCKET_REQUEST_BODY_TEMPLATE
-[Mustache template](https://mustache.github.io/) for conversating the Botium internal message structure to the Websocket payload as required for your communication protocol.
+[Mustache template](https://mustache.github.io/) for converting the Botium internal message structure to the Websocket payload as required for your communication protocol.
 
 The Mustache view contains the Botium internal message structure in the _msg_ field, see [Botium Wiki](https://botium.atlassian.net/wiki/spaces/BOTIUM/pages/38502401/Howto+develop+your+own+Botium+connector#The-outgoing-message). Example:
 
