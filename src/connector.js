@@ -124,8 +124,8 @@ class BotiumConnectorWebsocket {
                 this.queueBotSays(new Error(`Composing Websocket body from WEBSOCKET_START_BODY_TEMPLATE failed (${err.message})`))
               }
             }
-            console.log('start', requestOptions)
             await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, this.view))
+            debug(`Websocket Start requestOptions: ${JSON.stringify(requestOptions)}`)
             if (raw) this.ws.send(requestOptions.body || '')
             else this.ws.send(JSON.stringify(requestOptions.body || {}))
           }, 0)
@@ -141,7 +141,6 @@ class BotiumConnectorWebsocket {
         }
       })
       this.ws.on('message', async (data) => {
-        console.log('message', data)
         if (data || !this.caps[Capabilities.WEBSOCKET_RESPONSE_IGNORE_EMPTY]) {
           const raw = !!this.caps[Capabilities.WEBSOCKET_RESPONSE_RAW]
           if (raw) {
