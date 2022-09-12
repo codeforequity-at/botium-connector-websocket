@@ -1,0 +1,16 @@
+hi
+
+#bot
+Welcome!
+
+#me
+{
+  "conversationId": "botium",
+  "text": "Hi"
+}
+
+#bot
+Got your question.
+
+#bot
+You said: Hi

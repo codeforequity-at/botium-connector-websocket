@@ -173,16 +173,25 @@ class BotiumConnectorWebsocket {
 
     const requestOptions = { }
     const raw = !!this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_RAW]
-    if (raw) {
-      requestOptions.body = msg.messageText
-    } else if (this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE]) {
-      try {
-        requestOptions.body = this._getMustachedCap(Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE, this.view, !raw)
-      } catch (err) {
-        throw new Error(`Composing Websocket body from WEBSOCKET_REQUEST_BODY_TEMPLATE failed (${err.message})`)
+    if (msg.sourceData) {
+      requestOptions.body = msg.sourceData
+      await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, this.view))
+    } else {
+      if (raw) {
+        requestOptions.body = msg.messageText
+      } else if (this.caps[Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE]) {
+        try {
+          requestOptions.body = this._getMustachedCap(Capabilities.WEBSOCKET_REQUEST_BODY_TEMPLATE, this.view, !raw)
+        } catch (err) {
+          throw new Error(`Composing Websocket body from WEBSOCKET_REQUEST_BODY_TEMPLATE failed (${err.message})`)
+        }
       }
+      await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, this.view))
+      msg.sourceData = msg.sourceData || {}
+      msg.sourceData.requestOptions = requestOptions
     }
-    await executeHook(this.caps, this.requestHook, Object.assign({ requestOptions }, this.view))
+    debug(`Websocket constructed requestOptions ${JSON.stringify(requestOptions, null, 2)}`)
+
     if (raw) this.ws.send(requestOptions.body || '')
     else this.ws.send(JSON.stringify(requestOptions.body || {}))
   }
