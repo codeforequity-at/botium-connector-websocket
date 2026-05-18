@@ -14,6 +14,7 @@ const Capabilities = {
   WEBSOCKET_URL: 'WEBSOCKET_URL',
   WEBSOCKET_HEADERS_TEMPLATE: 'WEBSOCKET_HEADERS_TEMPLATE',
   WEBSOCKET_HANDSHAKE_TIMEOUT: 'WEBSOCKET_HANDSHAKE_TIMEOUT',
+  WEBSOCKET_REJECT_UNAUTHORIZED: 'WEBSOCKET_REJECT_UNAUTHORIZED',
   WEBSOCKET_REQUEST_BODY_RAW: 'WEBSOCKET_REQUEST_BODY_RAW',
   WEBSOCKET_REQUEST_BODY_TEMPLATE: 'WEBSOCKET_REQUEST_BODY_TEMPLATE',
   WEBSOCKET_REQUEST_HOOK: 'WEBSOCKET_REQUEST_HOOK',
@@ -79,6 +80,9 @@ class BotiumConnectorWebsocket {
       if (this.caps[Capabilities.WEBSOCKET_HEADERS_TEMPLATE]) {
         wsOptions.headers = this._getMustachedCap(Capabilities.WEBSOCKET_HEADERS_TEMPLATE, this.view, true)
       }
+      if (this.caps[Capabilities.WEBSOCKET_REJECT_UNAUTHORIZED] === false) {
+        wsOptions.rejectUnauthorized = false
+      }
 
       const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy
       const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy
@@ -101,6 +105,9 @@ class BotiumConnectorWebsocket {
           } else {
             proxyOptions.host = proxy
           }
+        }
+        if (wsOptions.rejectUnauthorized === false) {
+          proxyOptions.rejectUnauthorized = false
         }
         wsOptions.agent = new HttpsProxyAgent(proxyOptions)
       }

@@ -110,6 +110,13 @@ _Default: 10000 (10 sec)_
 
 Opening handshake timeout
 
+### WEBSOCKET_REJECT_UNAUTHORIZED
+_Default: true_
+
+TLS certificate validation for `wss://` connections. Set to `false` to accept self-signed or otherwise invalid certificates (for example behind an internal reverse proxy).
+
+    "WEBSOCKET_REJECT_UNAUTHORIZED": false
+
 ### WEBSOCKET_START_BODY_TEMPLATE
 Initial "session setup" message sent from Botium to the Websocket server, right after connecting.
 

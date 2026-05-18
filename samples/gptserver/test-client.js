@@ -5,7 +5,8 @@ const text = process.argv.slice(2).join(' ') || process.env.TEST_MESSAGE || 'Say
 const conversationId = process.env.TEST_CONVERSATION_ID || 'test-client'
 const timeoutMs = Number(process.env.TEST_TIMEOUT_MS) || 60000
 
-const ws = new WebSocket(url)
+const wsOptions = url.startsWith('wss://') ? { rejectUnauthorized: false } : undefined
+const ws = new WebSocket(url, wsOptions)
 let step = 0
 
 const timer = setTimeout(() => {
