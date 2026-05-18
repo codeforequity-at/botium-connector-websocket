@@ -6,7 +6,7 @@ const _ = require('lodash')
 const Mustache = require('mustache')
 const jp = require('jsonpath')
 const mime = require('mime-types')
-const HttpsProxyAgent = require('https-proxy-agent')
+const { HttpsProxyAgent } = require('https-proxy-agent')
 const { getHook, executeHook } = require('botium-core/src/helpers/HookUtils')
 const debug = require('debug')('botium-connector-websocket')
 

@@ -1,6 +1,6 @@
-import babel from 'rollup-plugin-babel'
-import commonjs from 'rollup-plugin-commonjs'
-import json from 'rollup-plugin-json'
+import babel from '@rollup/plugin-babel'
+import commonjs from '@rollup/plugin-commonjs'
+import json from '@rollup/plugin-json'
 
 export default {
   input: 'index.js',
@@ -22,7 +22,9 @@ export default {
     }),
     babel({
       exclude: 'node_modules/**',
-      runtimeHelpers: true
+      babelHelpers: 'runtime',
+      presets: ['@babel/preset-env'],
+      plugins: ['@babel/plugin-transform-runtime']
     }),
     json()
   ]

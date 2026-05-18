@@ -9,6 +9,6 @@
     "docker:run": "docker run --restart always -e OPENAI_API_KEY -p 4055:2345 -p 4056:2346 -d botium/websocket-gpt-sample"
   },
   "dependencies": {
-    "ws": "^7.2.0"
+    "ws": "^8.20.1"
   }
 }
