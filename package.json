@@ -11,7 +11,8 @@
     "echoserver": "cd samples/echoserver && npm start",
     "gptserver": "cd samples/gptserver && npm start",
     "build": "npm run eslint && rollup -c",
-    "eslint": "eslint index.js src/**/*.js"
+    "eslint": "eslint index.js src/**/*.js",
+    "test": "echo Just placeholder, no tests here yet"
   },
   "repository": {
     "type": "git",
