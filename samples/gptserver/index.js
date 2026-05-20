@@ -1,10 +1,13 @@
+const crypto = require('crypto')
 const WebSocket = require('ws')
 
 const JSON_PORT = Number(process.env.WS_JSON_PORT) || 2345
 const TEXT_PORT = Number(process.env.WS_TEXT_PORT) || 2346
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+const MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini'
 const SYSTEM_PROMPT = process.env.OPENAI_SYSTEM_PROMPT || 'You are a helpful assistant.'
 const OPENAI_URL = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions'
+const PROMPT_CACHE_RETENTION = process.env.OPENAI_PROMPT_CACHE_RETENTION || '24h'
+const LOCAL_CACHE_ENABLED = process.env.LOCAL_CACHE_ENABLED !== 'false'
 
 if (!process.env.OPENAI_API_KEY) {
   console.error('OPENAI_API_KEY is required')
@@ -12,6 +15,7 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const sessions = new Map()
+const localResponseCache = new Map()
 
 function log (dir, channel, sessionKey, data) {
   console.log(dir, '[' + channel + ']', sessionKey + ':', data)
@@ -24,10 +28,33 @@ function getHistory (sessionKey) {
   return sessions.get(sessionKey)
 }
 
+function inputMessagesForCache (messages) {
+  return messages.filter((m) => m.role !== 'assistant')
+}
+
+function localCacheKey (messages) {
+  return crypto.createHash('sha256').update(JSON.stringify({ model: MODEL, messages: inputMessagesForCache(messages) })).digest('hex')
+}
+
 async function askGpt (channel, sessionKey, userText) {
   const history = getHistory(sessionKey)
   history.push({ role: 'user', content: userText })
   log('->', channel, sessionKey, userText)
+
+  const cacheKey = localCacheKey(history)
+  if (LOCAL_CACHE_ENABLED && localResponseCache.has(cacheKey)) {
+    const reply = localResponseCache.get(cacheKey)
+    history.push({ role: 'assistant', content: reply })
+    log('cache', channel, sessionKey, reply)
+    return reply
+  }
+
+  const body = {
+    model: MODEL,
+    messages: history,
+    prompt_cache_key: sessionKey,
+    prompt_cache_retention: PROMPT_CACHE_RETENTION
+  }
 
   const response = await fetch(OPENAI_URL, {
     method: 'POST',
@@ -35,16 +62,29 @@ async function askGpt (channel, sessionKey, userText) {
       'Content-Type': 'application/json',
       Authorization: 'Bearer ' + process.env.OPENAI_API_KEY
     },
-    body: JSON.stringify({ model: MODEL, messages: history })
+    body: JSON.stringify(body)
   })
 
-  const body = await response.json()
+  const result = await response.json()
   if (!response.ok) {
-    throw new Error(body.error && body.error.message ? body.error.message : response.statusText)
+    history.pop()
+    throw new Error(result.error && result.error.message ? result.error.message : response.statusText)
   }
 
-  const reply = body.choices[0].message.content || ''
+  const reply = result.choices[0].message.content || ''
   history.push({ role: 'assistant', content: reply })
+
+  if (LOCAL_CACHE_ENABLED) {
+    localResponseCache.set(cacheKey, reply)
+  }
+
+  const cachedTokens = result.usage &&
+    result.usage.prompt_tokens_details &&
+    result.usage.prompt_tokens_details.cached_tokens
+  if (cachedTokens) {
+    log('gpt-cache', channel, sessionKey, cachedTokens + ' prompt tokens from OpenAI cache')
+  }
+
   log('<-', channel, sessionKey, reply)
   return reply
 }
@@ -139,3 +179,4 @@ wssText.on('connection', (ws) => {
 })
 
 console.log(`Waiting for connections on ws://127.0.0.1:${JSON_PORT} (JSON) and ws://127.0.0.1:${TEXT_PORT} (text)`)
+console.log(`Model: ${MODEL}, OpenAI prompt cache: ${PROMPT_CACHE_RETENTION}, local cache: ${LOCAL_CACHE_ENABLED}`)

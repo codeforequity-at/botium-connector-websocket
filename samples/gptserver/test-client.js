@@ -2,7 +2,7 @@ const WebSocket = require('ws')
 
 const url = process.env.WS_URL || 'ws://127.0.0.1:2345'
 const text = process.argv.slice(2).join(' ') || process.env.TEST_MESSAGE || 'Say hello in one short sentence.'
-const conversationId = process.env.TEST_CONVERSATION_ID || 'test-client'
+const conversationId = (process.env.TEST_CONVERSATION_ID || 'test-client') + '-' + Math.random().toString(36).slice(2, 10)
 const timeoutMs = Number(process.env.TEST_TIMEOUT_MS) || 60000
 
 const wsOptions = url.startsWith('wss://') ? { rejectUnauthorized: false } : undefined
