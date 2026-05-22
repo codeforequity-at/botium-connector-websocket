@@ -119,7 +119,7 @@ wssJson.on('connection', (ws) => {
       return
     }
 
-    const key = content.conversationId || 'default'
+    const key = content.conversationId || 'json-' + Math.random().toString(36).slice(2)
     const userText = content.text || ''
 
     if (userText === 'empty') {
