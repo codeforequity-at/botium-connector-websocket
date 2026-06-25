@@ -9,6 +9,7 @@ services:
       - OPENAI_SYSTEM_PROMPT=${OPENAI_SYSTEM_PROMPT:-You are a helpful assistant.}
       - OPENAI_PROMPT_CACHE_RETENTION=${OPENAI_PROMPT_CACHE_RETENTION:-24h}
       - LOCAL_CACHE_ENABLED=${LOCAL_CACHE_ENABLED:-true}
+    restart: always      
     ports:
       - 4055:2345
       - 4056:2346
