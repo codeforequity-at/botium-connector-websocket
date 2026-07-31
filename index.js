@@ -69,7 +69,7 @@ module.exports = {
         name: 'WEBSOCKET_REQUEST_HOOK',
         label: 'Request Hook',
         description: 'Hook function or inline code for customizing the outgoing Websocket request',
-        type: 'hook',
+        type: 'javascript',
         required: false,
         advanced: true
       },
@@ -108,7 +108,7 @@ module.exports = {
         name: 'WEBSOCKET_RESPONSE_HOOK',
         label: 'Response Hook',
         description: 'Hook function or inline code for customizing the incoming Websocket response',
-        type: 'hook',
+        type: 'javascript',
         required: false,
         advanced: true
       },
