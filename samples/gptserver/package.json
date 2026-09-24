@@ -6,7 +6,7 @@
     "ping": "node test-client.js",
     "docker:build": "docker build -t botium/websocket-gpt-sample .",
     "docker:push": "docker push botium/websocket-gpt-sample",
-    "docker:run": "docker run --restart always -e OPENAI_API_KEY -p 4055:2345 -p 4056:2346 -d botium/websocket-gpt-sample"
+    "docker:run": "docker run --restart always -e OPENAI_API_KEY -p 4055:2345 -p 4056:2346 -p 4057:2347 -d botium/websocket-gpt-sample"
   },
   "dependencies": {
     "ws": "^8.20.1"

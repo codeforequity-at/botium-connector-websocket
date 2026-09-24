@@ -1,24 +1,36 @@
 const crypto = require('crypto')
+const http = require('http')
 const WebSocket = require('ws')
 
 const JSON_PORT = Number(process.env.WS_JSON_PORT) || 2345
 const TEXT_PORT = Number(process.env.WS_TEXT_PORT) || 2346
+const REST_PORT = Number(process.env.REST_PORT) || 2347
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini'
 const SYSTEM_PROMPT = process.env.OPENAI_SYSTEM_PROMPT || 'You are a helpful assistant.'
 const OPENAI_URL = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions'
 const PROMPT_CACHE_RETENTION = process.env.OPENAI_PROMPT_CACHE_RETENTION || '24h'
 const LOCAL_CACHE_ENABLED = process.env.LOCAL_CACHE_ENABLED !== 'false'
+const HAS_OPENAI = !!process.env.OPENAI_API_KEY
 
-if (!process.env.OPENAI_API_KEY) {
-  console.error('OPENAI_API_KEY is required')
-  process.exit(1)
-}
+const DEFAULT_REPLIES = [
+  'Hello! I am a demo bot. How can I help?',
+  'Thanks for your message. What would you like to know?',
+  'Interesting point! Tell me more.',
+  'Got it. Anything else I can help with?'
+]
 
 const sessions = new Map()
 const localResponseCache = new Map()
+let defaultReplyIndex = 0
 
 function log (dir, channel, sessionKey, data) {
   console.log(dir, '[' + channel + ']', sessionKey + ':', data)
+}
+
+function nextDefaultReply () {
+  const reply = DEFAULT_REPLIES[defaultReplyIndex % DEFAULT_REPLIES.length]
+  defaultReplyIndex += 1
+  return reply
 }
 
 function getHistory (sessionKey) {
@@ -40,6 +52,13 @@ async function askGpt (channel, sessionKey, userText) {
   const history = getHistory(sessionKey)
   history.push({ role: 'user', content: userText })
   log('->', channel, sessionKey, userText)
+
+  if (!HAS_OPENAI) {
+    const reply = nextDefaultReply()
+    history.push({ role: 'assistant', content: reply })
+    log('default', channel, sessionKey, reply)
+    return reply
+  }
 
   const cacheKey = localCacheKey(history)
   if (LOCAL_CACHE_ENABLED && localResponseCache.has(cacheKey)) {
@@ -91,6 +110,35 @@ async function askGpt (channel, sessionKey, userText) {
 
 function dropSession (sessionKey) {
   sessions.delete(sessionKey)
+}
+
+function sendJson (res, status, payload) {
+  const body = JSON.stringify(payload)
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(body)
+  })
+  res.end(body)
+}
+
+function readJsonBody (req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', (chunk) => chunks.push(chunk))
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString()
+      if (!raw) {
+        resolve({})
+        return
+      }
+      try {
+        resolve(JSON.parse(raw))
+      } catch (err) {
+        reject(new Error('Invalid JSON'))
+      }
+    })
+    req.on('error', reject)
+  })
 }
 
 const wssJson = new WebSocket.Server({ port: JSON_PORT })
@@ -178,5 +226,64 @@ wssText.on('connection', (ws) => {
   ws.on('close', () => dropSession(sessionKey))
 })
 
-console.log(`Waiting for connections on ws://127.0.0.1:${JSON_PORT} (JSON) and ws://127.0.0.1:${TEXT_PORT} (text)`)
-console.log(`Model: ${MODEL}, OpenAI prompt cache: ${PROMPT_CACHE_RETENTION}, local cache: ${LOCAL_CACHE_ENABLED}`)
+const restServer = http.createServer(async (req, res) => {
+  if (req.method === 'GET' && (req.url === '/' || req.url === '/health')) {
+    sendJson(res, 200, {
+      ok: true,
+      mode: HAS_OPENAI ? 'openai' : 'default',
+      endpoints: {
+        websocketJson: `ws://127.0.0.1:${JSON_PORT}`,
+        websocketText: `ws://127.0.0.1:${TEXT_PORT}`,
+        restMessage: `http://127.0.0.1:${REST_PORT}/message`
+      }
+    })
+    return
+  }
+
+  if (req.method === 'POST' && req.url === '/message') {
+    let content
+    try {
+      content = await readJsonBody(req)
+    } catch (err) {
+      sendJson(res, 400, { error: err.message })
+      return
+    }
+
+    const key = content.conversationId || 'rest-' + Math.random().toString(36).slice(2)
+    const userText = content.text || ''
+    log('<<', 'rest', key, JSON.stringify(content))
+
+    if (userText === 'empty') {
+      const empty = {
+        conversationId: key,
+        text: '',
+        intent: 'EMPTY_INTENT'
+      }
+      log('>>', 'rest', key, JSON.stringify(empty))
+      sendJson(res, 200, empty)
+      return
+    }
+
+    try {
+      const reply = await askGpt('rest', key, userText)
+      const out = { conversationId: key, text: reply }
+      log('>>', 'rest', key, JSON.stringify(out))
+      sendJson(res, 200, out)
+    } catch (err) {
+      console.error('openai error:', err.message)
+      sendJson(res, 500, { conversationId: key, text: 'Error: ' + err.message })
+    }
+    return
+  }
+
+  sendJson(res, 404, { error: 'Not found. Use GET /health or POST /message' })
+})
+
+restServer.listen(REST_PORT)
+
+console.log(`Waiting for connections on ws://127.0.0.1:${JSON_PORT} (JSON), ws://127.0.0.1:${TEXT_PORT} (text), http://127.0.0.1:${REST_PORT} (REST)`)
+if (HAS_OPENAI) {
+  console.log(`Mode: openai, model: ${MODEL}, OpenAI prompt cache: ${PROMPT_CACHE_RETENTION}, local cache: ${LOCAL_CACHE_ENABLED}`)
+} else {
+  console.log(`Mode: default (no OPENAI_API_KEY), alternating ${DEFAULT_REPLIES.length} canned replies`)
+}
