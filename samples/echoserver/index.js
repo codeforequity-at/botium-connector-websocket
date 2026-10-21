@@ -10,8 +10,9 @@ wssJson.on('connection', (ws) => {
     text: 'Welcome!'
   }))
   ws.on('message', (message) => {
-    console.log('json received: %s', message)
-    const content = JSON.parse(message)
+    const text = message.toString()
+    console.log('json received: %s', text)
+    const content = JSON.parse(text)
     if (content.text === 'empty') {
       ws.send(JSON.stringify({
         conversationId: content.conversationId,
@@ -36,12 +37,13 @@ wssText.on('connection', (ws) => {
   console.log('text connection established')
   ws.send('Welcome!')
   ws.on('message', (message) => {
-    console.log('text received: %s', message)
-    if (message === 'empty') {
+    const text = message.toString()
+    console.log('text received: %s', text)
+    if (text === 'empty') {
       ws.send('')
     } else {
       ws.send('Got your question.')
-      ws.send('You said: ' + message)
+      ws.send('You said: ' + text)
     }
   })
 })
