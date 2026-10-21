@@ -1,20 +1,23 @@
-FROM node:8
+FROM node:24.19.0-alpine3.24
 
-# Create app directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-COPY package*.json ./
+COPY package.json ./
 
-RUN npm install
-# If you are building your code for production
-# RUN npm ci --only=production
+# zlib 1.3.2-r0 in this tag is fixed by the Alpine 3.24 upgrade.
+# npm and corepack ship with high and critical issues that no current npm
+# release clears, and the server only needs the node binary at runtime.
+RUN apk upgrade --no-cache \
+ && npm install --omit=dev \
+ && npm cache clean --force \
+ && rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /root/.npm \
+ && rm -f /usr/local/bin/npm /usr/local/bin/npx \
+          /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
-# Bundle app source
-COPY . .
+COPY index.js ./
 
 EXPOSE 2345
 EXPOSE 2346
-CMD [ "npm", "start" ]
+CMD [ "node", "index.js" ]
